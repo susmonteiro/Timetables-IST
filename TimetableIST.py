@@ -111,7 +111,6 @@ def getPageCode(url):
 
 def parseClasses(subject, url, pattern):
     info = getPageCode(url)
-    #patternGetClasses = " *<td>" + subject
     patternGetClasses = " *<td>(a_)?" + subject
 
     lines = info.splitlines()
@@ -120,25 +119,30 @@ def parseClasses(subject, url, pattern):
         if re.search(patternGetClasses, l) and re.search(pattern, l):
             typeClass = re.findall(pattern, l)[0]
             i += 2
-            #nameOfWeekDay = re.findall("S..|T..|Q..", lines[i])[0]
+
             nameOfWeekDay = re.findall("S..|T..|Q..", lines[i])[0]
             dayOfWeek = getWeekDay(nameOfWeekDay)
-            #beginTime, finishTime = re.findall("\d{2}:\d{2}", lines[i])
+
             beginTime, finishTime = re.findall("\d{2}:\d{2}", lines[i])
             i += 5
-            if re.search(' *LEIC-A', lines[i]):
-                begin = timeCellNumber[beginTime]
-                finish = timeCellNumber[finishTime]
-                available = 1
-                for idx in range(begin, finish):
-                    while str(idx) + nameOfWeekDay + str(available) in globalclasses:
-                        available += 1
-                if available - 1 > maxshift[dayOfWeek]:
-                    maxshift[dayOfWeek] = available - 1
-                for idx in range(begin, finish):
-                    globalclasses.append(str(str(idx) + nameOfWeekDay + str(available)))
-                classes_code.append({'start' : begin, 'end' : finish-1, 'weekDay' : dayOfWeek, 'subject' : subject, 'typeClass' : typeClass, 'shift' : available})
-        
+
+            # if re.search(' *LEIC-A', lines[i]):   #switch with following line for leic
+            while (not re.search("</td>", lines[i])):   #when the class belongs to multiple "teams"
+                if re.search(' *MEIC-A', lines[i]):
+                    begin = timeCellNumber[beginTime]
+                    finish = timeCellNumber[finishTime]
+                    available = 1
+                    for idx in range(begin, finish):
+                        while str(idx) + nameOfWeekDay + str(available) in globalclasses:
+                            available += 1
+                    if available - 1 > maxshift[dayOfWeek]:
+                        maxshift[dayOfWeek] = available - 1
+                    for idx in range(begin, finish):
+                        globalclasses.append(str(str(idx) + nameOfWeekDay + str(available)))
+                    classes_code.append({'start' : begin, 'end' : finish-1, 'weekDay' : dayOfWeek, 'subject' : subject, 'typeClass' : typeClass, 'shift' : available})
+                i+=1
+
+                 
 def createSheet(sheet, pattern):
     init()
     createHours(sheet)
@@ -149,6 +153,7 @@ def createSheet(sheet, pattern):
     writeWeekDays(sheet)
 
 ###########         PROGRAMA            ##########
+print("Starting...")
 
 wb = Workbook()
 sheetAll = wb.add_sheet('Tudo')
@@ -157,4 +162,6 @@ createSheet(sheetAll, "T\d{2}|L\d{2}|PB\d{2}")
 sheetT = wb.add_sheet('Teoricas')
 createSheet(sheetT, "T\d{2}")
 
-wb.save('C:\\Users\smore\Desktop\horario.xls')
+wb.save('/mnt/c/Users/Susana/Dropbox/IST/masters/horario.xls')
+
+print("Done!")
